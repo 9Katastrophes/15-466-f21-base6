@@ -36,6 +36,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.downs += 1;
+			space.pressed = true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -49,6 +52,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.pressed = false;
 			return true;
 		}
 	}
@@ -133,7 +139,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 		draw_text(glm::vec2(-aspect + 0.1f, 0.0f), server_message, 0.09f);
 
-		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to change your total)", 0.09f);
+		draw_text(glm::vec2(-aspect + 0.1f,-0.9f), "(press WASD to move; press SPACE to play note)", 0.09f);
 	}
 	GL_ERRORS();
 }
