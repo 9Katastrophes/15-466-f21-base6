@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <unordered_map>
+#include <glm/gtc/type_ptr.hpp>
 
 #ifdef _WIN32
 extern "C" { uint32_t GetACP(); }
@@ -54,10 +55,9 @@ int main(int argc, char **argv) {
 		}
 		std::string name;
 
-		uint32_t left_presses = 0;
-		uint32_t right_presses = 0;
-		uint32_t up_presses = 0;
-		uint32_t down_presses = 0;
+		glm::vec2 position = glm::vec2(0.0f);
+
+		uint32_t space_presses = 0;
 
 		int32_t total = 0;
 
@@ -101,9 +101,8 @@ int main(int argc, char **argv) {
 					PlayerInfo &player = f->second;
 
 					//handle messages from client:
-					//TODO: update for the sorts of messages your clients send
-					while (c->recv_buffer.size() >= 5) {
-						//expecting five-byte messages 'b' (left count) (right count) (down count) (up count)
+					while (c->recv_buffer.size() >= 10) {
+						//expecting 10-byte messages 'b' (space count) (position.x) (position.y)
 						char type = c->recv_buffer[0];
 						if (type != 'b') {
 							std::cout << " message of non-'b' type received from client!" << std::endl;
@@ -111,17 +110,15 @@ int main(int argc, char **argv) {
 							c->close();
 							return;
 						}
-						uint8_t left_count = c->recv_buffer[1];
-						uint8_t right_count = c->recv_buffer[2];
-						uint8_t down_count = c->recv_buffer[3];
-						uint8_t up_count = c->recv_buffer[4];
+						uint8_t space_count = c->recv_buffer[1];
+						float player_pos_x = (static_cast<float>(c->recv_buffer[2]));
+						float player_pos_y = (static_cast<float>(c->recv_buffer[6]));
 
-						player.left_presses += left_count;
-						player.right_presses += right_count;
-						player.down_presses += down_count;
-						player.up_presses += up_count;
+						player.space_presses += space_count;
+						player.position.x = player_pos_x;
+						player.position.y = player_pos_y;
 
-						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 5);
+						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 10);
 					}
 				}
 			}, remain);
@@ -133,17 +130,8 @@ int main(int argc, char **argv) {
 		int32_t overall_sum = 0;
 		for (auto &[c, player] : players) {
 			(void)c; //work around "unused variable" warning on whatever version of g++ github actions is running
-			for (; player.left_presses > 0; --player.left_presses) {
+			for (; player.space_presses > 0; --player.space_presses) {
 				player.total -= 1;
-			}
-			for (; player.right_presses > 0; --player.right_presses) {
-				player.total += 1;
-			}
-			for (; player.down_presses > 0; --player.down_presses) {
-				player.total -= 10;
-			}
-			for (; player.up_presses > 0; --player.up_presses) {
-				player.total += 10;
 			}
 			if (status_message != "") status_message += " + ";
 			status_message += std::to_string(player.total) + " (" + player.name + ")";
