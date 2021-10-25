@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <random>
 #include <time.h>
+#include <bit>
 
 glm::u8vec4 generate_random_color() {
 	//random number generation code inspiration taken from here: https://stackoverflow.com/questions/686353/random-float-number-generation
@@ -51,7 +52,7 @@ int main(int argc, char **argv) {
 	//------------ initialization ------------
 
 	Server server(argv[1]);
-
+	srand(time(NULL));
 
 	//------------ main loop ------------
 	constexpr float ServerTick = 1.0f / 10.0f; //TODO: set a server tick that makes sense for your game
@@ -62,18 +63,12 @@ int main(int argc, char **argv) {
 	struct PlayerInfo {
 		PlayerInfo() {
 			static uint32_t next_player_id = 1;
-			name = "Player" + std::to_string(next_player_id);
 			next_player_id += 1;
 		}
-		std::string name;
-
 		glm::vec2 position = glm::vec2(0.0f);
 		glm::u8vec4 color = glm::u8vec4(255, 255, 255, 255);
 
 		uint32_t space_presses = 0;
-
-		int32_t total = 0;
-
 	};
 	std::unordered_map< Connection *, PlayerInfo > players;
 
@@ -123,13 +118,21 @@ int main(int argc, char **argv) {
 							c->close();
 							return;
 						}
-						uint8_t space_count = c->recv_buffer[1];
-						float player_pos_x = (static_cast<float>(c->recv_buffer[2]));
-						float player_pos_y = (static_cast<float>(c->recv_buffer[6]));
 
+						uint8_t space_count = static_cast<uint8_t>(c->recv_buffer[1]);
 						player.space_presses += space_count;
+
+						float player_pos_x;
+						float player_pos_y;
+
+						std::memcpy(&player_pos_x, &c->recv_buffer[2], 4);
+						std::memcpy(&player_pos_y, &c->recv_buffer[6], 4);
+
+						//player_pos_x = player_pos_x;
+						//player_pos_y = player_pos_x;
+	
 						player.position.x = player_pos_x;
-						player.position.y = player_pos_y;
+						player.position.y = player_pos_y;						
 
 						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 10);
 					}
@@ -138,24 +141,22 @@ int main(int argc, char **argv) {
 		}
 
 		//update current game state
-		//TODO: replace with *your* game state update
 		std::string status_message = "";
-		int32_t overall_sum = 0;
+		std::string keys_pressed = "k";
 		for (auto &[c, player] : players) {
 			(void)c; //work around "unused variable" warning on whatever version of g++ github actions is running
 			for (; player.space_presses > 0; --player.space_presses) {
-				player.total -= 1;
+				//TODO: check if the press was on a key
+				//if so, add the key id to keys_pressed
+				player.space_presses -= 1;
 			}
-			if (status_message != "") status_message += " + ";
-			status_message += std::to_string(player.total) + " (" + player.name + ")";
-
-			overall_sum += player.total;
+			status_message += "(" + std::to_string(player.position.x) + "," + std::to_string(player.position.y) + ")"; //player position
+			status_message += "<" + std::to_string(player.color[0]) + "," + std::to_string(player.color[1]) + "," + std::to_string(player.color[2]) + "," + std::to_string(player.color[3]) + ">";
 		}
-		status_message += " = " + std::to_string(overall_sum);
-		//std::cout << status_message << std::endl; //DEBUG
+		status_message += keys_pressed;
+		std::cout << status_message << std::endl; //DEBUG
 
 		//send updated game state to all clients
-		//TODO: update for your game state
 		for (auto &[c, player] : players) {
 			(void)player; //work around "unused variable" warning on whatever g++ github actions uses
 			//send an update starting with 'm', a 24-bit size, and a blob of text:

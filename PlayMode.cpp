@@ -6,6 +6,7 @@
 #include "hex_dump.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <random>
 #include <iostream>
@@ -100,8 +101,6 @@ PlayMode::PlayMode(Client &client_) : client(client_) {
 
 		GL_ERRORS(); //PARANOIA: print out any OpenGL errors that may have happened
 	}
-
-	cursor_color = generate_random_color();
 }
 
 PlayMode::~PlayMode() {
@@ -147,10 +146,10 @@ void PlayMode::update(float elapsed) {
 
 	//queue data for sending to server:
 	//send a 10-byte message of type 'b':
-	client.connections.back().send('b');			//1 byte
-	client.connections.back().send(space.downs);	//1 byte
-	client.connections.back().send(position.x);		//4 bytes
-	client.connections.back().send(position.y);		//4 bytes
+	client.connections.back().send('b');				//1 byte
+	client.connections.back().send(space.downs);		//1 byte
+	client.connections.back().send(position.x);			//4 bytes
+	client.connections.back().send(position.y);			//4 bytes
 
 	//send/receive data:
 	client.poll([this](Connection *c, Connection::Event event){
@@ -177,6 +176,59 @@ void PlayMode::update(float elapsed) {
 
 				//and consume this part of the buffer:
 				c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 4 + size);
+
+				//and reset player_positions and player_colors vectors
+				player_positions.clear();
+				player_colors.clear();
+
+				// and parse message
+				std::string server_message_cpy = server_message;
+				while (server_message_cpy.length() > 0) {
+					if (server_message_cpy[0] == '(') {										//we are processing the player's coordinates
+						server_message_cpy = server_message_cpy.substr(1);					//get rid of '('
+
+						size_t delimiter_pos = server_message_cpy.find(",");				//find the first ','
+						std::string pos_x = server_message_cpy.substr(0, delimiter_pos);	//get the player's x position
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the x position
+
+						delimiter_pos = server_message_cpy.find(")");						//find the first ')'
+						std::string pos_y = server_message_cpy.substr(0, delimiter_pos);	//get the player's y position
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the y position
+
+						assert(server_message_cpy[0] == '<');								//now we should be processing the player's color
+
+						server_message_cpy = server_message_cpy.substr(1);					//get rid of the '<'
+
+						delimiter_pos = server_message_cpy.find(",");						//find the first ','
+						std::string r = server_message_cpy.substr(0, delimiter_pos);		//get the r-value of the color
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the r-value
+
+						delimiter_pos = server_message_cpy.find(",");						//find the first ','
+						std::string g = server_message_cpy.substr(0, delimiter_pos);		//get the g-value of the color
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the g-value
+
+						delimiter_pos = server_message_cpy.find(",");						//find the first ','
+						std::string b = server_message_cpy.substr(0, delimiter_pos);		//get the b-value of the color
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the b-value
+
+						delimiter_pos = server_message_cpy.find(">");						//find the first '>'
+						std::string a = server_message_cpy.substr(0, delimiter_pos);		//get the a-value of the color
+						server_message_cpy = server_message_cpy.substr(delimiter_pos + 1);	//cut off the a value
+
+						glm::vec2 player_position = glm::vec2(std::stof(pos_x), std::stof(pos_y));
+						glm::u8vec4 player_color = glm::u8vec4(stoi(r), stoi(g), stoi(b), stoi(a));
+
+						player_positions.push_back(player_position);
+						player_colors.push_back(player_color);
+
+					}
+					if (server_message_cpy[0] == 'k') { //we are processing the piano keys pressed
+						//TODO: process
+						server_message_cpy = server_message_cpy.substr(1);
+					}
+				}
+
+				assert(player_positions.size() == player_colors.size());
 			}
 		}
 	}, 0.0);
@@ -229,8 +281,10 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	draw_rectangle(glm::vec2(-court_radius.x + key_radius * 13.0f, 0.0f), glm::vec2(key_radius, court_radius.y + 2.0f * key_radius), purple);	
 	draw_rectangle(glm::vec2(-court_radius.x + key_radius * 15.0f, 0.0f), glm::vec2(key_radius, court_radius.y + 2.0f * key_radius), pink);
 
-	//draw player cursor
-	draw_rectangle(position, cursor_radius, cursor_color);
+	//draw player cursors
+	for (size_t i=0;i<player_positions.size();i++) {
+		draw_rectangle(player_positions[i], glm::vec2(0.25f, 0.60f), player_colors[i]);
+	}
 	
 	//------ compute court-to-window transform ------
 
@@ -314,14 +368,4 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	
 
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
-}
-
-glm::u8vec4 PlayMode::generate_random_color() {
-	//random number generation code inspiration taken from here: https://stackoverflow.com/questions/686353/random-float-number-generation
-	int r = rand() % 256;
-	int g = rand() % 256;
-	int b = rand() % 256;
-	int a = 255;
-
-	return glm::u8vec4(r, g, b, a);
 }
