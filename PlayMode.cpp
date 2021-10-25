@@ -8,8 +8,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <random>
+#include <iostream>
+#include <time.h>
 
 PlayMode::PlayMode(Client &client_) : client(client_) {
+	srand(time(NULL));
 
 	//----- allocate OpenGL resources -----
 	//taken from game0 code!
@@ -30,7 +33,7 @@ PlayMode::PlayMode(Client &client_) : client(client_) {
 		//set vertex_buffer as the source of glVertexAttribPointer() commands:
 		glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
 
-		//set up the vertex array object to describe arrays of PongMode::Vertex:
+		//set up the vertex array object to describe arrays of PlayMode::Vertex:
 		glVertexAttribPointer(
 			color_texture_program.Position_vec4, //attribute
 			3, //size
@@ -227,6 +230,11 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	draw_rectangle(glm::vec2(-court_radius.x + key_radius * 13.0f, 0.0f), glm::vec2(key_radius, court_radius.y + 2.0f * key_radius), purple);	
 	draw_rectangle(glm::vec2(-court_radius.x + key_radius * 15.0f, 0.0f), glm::vec2(key_radius, court_radius.y + 2.0f * key_radius), pink);
 
+	//draw player cursor
+	draw_rectangle(position, cursor_radius, cursor_color);
+	std::cout << "cursor_pos: (" << position[0] << ", " << position[1] << ")\n";
+	std::cout << "cursor_color: <" << cursor_color[0] << ", " << cursor_color[1] << ", " << cursor_color[2] << ", " << cursor_color[3] << ">\n";
+
 	//------ compute court-to-window transform ------
 
 	//compute area that should be visible:
@@ -274,9 +282,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glClearColor(bg_color.r / 255.0f, bg_color.g / 255.0f, bg_color.b / 255.0f, bg_color.a / 255.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	//use alpha blending:
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 
@@ -314,12 +319,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }
 
-glm::vec4 PlayMode::generate_random_color() {
-	//random number generation code taken from here: https://stackoverflow.com/questions/686353/random-float-number-generation
-	float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-	float g = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-	float b = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-	float a = 1.0f;
+glm::u8vec4 PlayMode::generate_random_color() {
+	//random number generation code inspiration taken from here: https://stackoverflow.com/questions/686353/random-float-number-generation
+	int r = rand() % 256;
+	int g = rand() % 256;
+	int b = rand() % 256;
+	int a = 255;
 
-	return glm::vec4(r, g, b, a);
+	return glm::u8vec4(r, g, b, a);
 }

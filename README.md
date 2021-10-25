@@ -15,7 +15,7 @@ How To Play:
 (TODO: describe the controls and (if needed) goals/strategy.)
 
 Sources: 
-Random number generator code: https://stackoverflow.com/questions/686353/random-float-number-generation
+Random number generator code inspiration: https://stackoverflow.com/questions/686353/random-float-number-generation
 
 
 This game was built with [NEST](NEST.md).

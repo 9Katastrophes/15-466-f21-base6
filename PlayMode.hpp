@@ -19,7 +19,7 @@ struct PlayMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//helper functions
-	glm::vec4 generate_random_color();
+	glm::u8vec4 generate_random_color();
 
 	//----- game state -----
 
@@ -30,8 +30,8 @@ struct PlayMode : Mode {
 	} space;
 
 	glm::vec2 position = glm::vec2(0.0f);
-	glm::vec4 cursor_color = glm::vec4(0.0f);
-	glm::vec2 cursor_radius = glm::vec2(0.2f, 0.2f);
+	glm::u8vec4 cursor_color = glm::u8vec4(255, 255, 255, 255);
+	glm::vec2 cursor_radius = glm::vec2(0.25f, 0.60f);
 
 	glm::vec2 court_radius = glm::vec2(16.0f, 4.0f);
 
