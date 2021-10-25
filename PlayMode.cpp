@@ -147,11 +147,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 
 	//queue data for sending to server:
-	//send a 10-byte message of type 'b':
+	//send a 14-byte message of type 'b':
 	client.connections.back().send('b');			//1 byte
 	client.connections.back().send(space.downs);	//1 byte
 	client.connections.back().send(position.x);		//4 bytes
 	client.connections.back().send(position.y);		//4 bytes
+	client.connections.back().send(cursor_color[0]);//1 byte
+	client.connections.back().send(cursor_color[1]);//1 byte
+	client.connections.back().send(cursor_color[2]);//1 byte
+	client.connections.back().send(cursor_color[3]);//1 byte
 
 	//send/receive data:
 	client.poll([this](Connection *c, Connection::Event event){
@@ -232,9 +236,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	//draw player cursor
 	draw_rectangle(position, cursor_radius, cursor_color);
-	std::cout << "cursor_pos: (" << position[0] << ", " << position[1] << ")\n";
-	std::cout << "cursor_color: <" << cursor_color[0] << ", " << cursor_color[1] << ", " << cursor_color[2] << ", " << cursor_color[3] << ">\n";
-
+	
 	//------ compute court-to-window transform ------
 
 	//compute area that should be visible:

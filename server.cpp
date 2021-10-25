@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
 		std::string name;
 
 		glm::vec2 position = glm::vec2(0.0f);
+		glm::u8vec4 color = glm::u8vec4(255, 255, 255, 255);
 
 		uint32_t space_presses = 0;
 
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
 
 					//handle messages from client:
 					while (c->recv_buffer.size() >= 10) {
-						//expecting 10-byte messages 'b' (space count) (position.x) (position.y)
+						//expecting 14-byte messages 'b' (space count) (position.x) (position.y)
 						char type = c->recv_buffer[0];
 						if (type != 'b') {
 							std::cout << " message of non-'b' type received from client!" << std::endl;
@@ -113,12 +114,14 @@ int main(int argc, char **argv) {
 						uint8_t space_count = c->recv_buffer[1];
 						float player_pos_x = (static_cast<float>(c->recv_buffer[2]));
 						float player_pos_y = (static_cast<float>(c->recv_buffer[6]));
+						glm::u8vec4 player_color = glm::u8vec4(c->recv_buffer[10], c->recv_buffer[11], c->recv_buffer[12], c->recv_buffer[13]);
 
 						player.space_presses += space_count;
 						player.position.x = player_pos_x;
 						player.position.y = player_pos_y;
+						color = player_color;
 
-						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 10);
+						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 14);
 					}
 				}
 			}, remain);
