@@ -9,6 +9,18 @@
 #include <cassert>
 #include <unordered_map>
 #include <glm/gtc/type_ptr.hpp>
+#include <random>
+#include <time.h>
+
+glm::u8vec4 generate_random_color() {
+	//random number generation code inspiration taken from here: https://stackoverflow.com/questions/686353/random-float-number-generation
+	int r = rand() % 256;
+	int g = rand() % 256;
+	int b = rand() % 256;
+	int a = 255;
+
+	return glm::u8vec4(r, g, b, a);
+}
 
 #ifdef _WIN32
 extern "C" { uint32_t GetACP(); }
@@ -81,7 +93,7 @@ int main(int argc, char **argv) {
 
 					//create some player info for them:
 					players.emplace(c, PlayerInfo());
-
+					players[c].color = generate_random_color();
 
 				} else if (evt == Connection::OnClose) {
 					//client disconnected:
@@ -103,7 +115,7 @@ int main(int argc, char **argv) {
 
 					//handle messages from client:
 					while (c->recv_buffer.size() >= 10) {
-						//expecting 14-byte messages 'b' (space count) (position.x) (position.y)
+						//expecting 10-byte messages 'b' (space count) (position.x) (position.y)
 						char type = c->recv_buffer[0];
 						if (type != 'b') {
 							std::cout << " message of non-'b' type received from client!" << std::endl;
@@ -114,14 +126,12 @@ int main(int argc, char **argv) {
 						uint8_t space_count = c->recv_buffer[1];
 						float player_pos_x = (static_cast<float>(c->recv_buffer[2]));
 						float player_pos_y = (static_cast<float>(c->recv_buffer[6]));
-						glm::u8vec4 player_color = glm::u8vec4(c->recv_buffer[10], c->recv_buffer[11], c->recv_buffer[12], c->recv_buffer[13]);
 
 						player.space_presses += space_count;
 						player.position.x = player_pos_x;
 						player.position.y = player_pos_y;
-						color = player_color;
 
-						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 14);
+						c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 10);
 					}
 				}
 			}, remain);

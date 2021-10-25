@@ -9,7 +9,6 @@
 
 #include <random>
 #include <iostream>
-#include <time.h>
 
 PlayMode::PlayMode(Client &client_) : client(client_) {
 	srand(time(NULL));
@@ -147,15 +146,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 
 	//queue data for sending to server:
-	//send a 14-byte message of type 'b':
+	//send a 10-byte message of type 'b':
 	client.connections.back().send('b');			//1 byte
 	client.connections.back().send(space.downs);	//1 byte
 	client.connections.back().send(position.x);		//4 bytes
 	client.connections.back().send(position.y);		//4 bytes
-	client.connections.back().send(cursor_color[0]);//1 byte
-	client.connections.back().send(cursor_color[1]);//1 byte
-	client.connections.back().send(cursor_color[2]);//1 byte
-	client.connections.back().send(cursor_color[3]);//1 byte
 
 	//send/receive data:
 	client.poll([this](Connection *c, Connection::Event event){
