@@ -29,6 +29,7 @@ drum.wav: https://freesound.org/people/tripjazz/sounds/508559/
 squeak.wav: https://freesound.org/people/Higgs01/sounds/428114/
 bop.wav: https://freesound.org/people/Leszek_Szary/sounds/146717/
 bark.wav: https://freesound.org/people/SGAK/sounds/467840/
+A lot of OpenGL code was taken from game0.
 
 
 This game was built with [NEST](NEST.md).
