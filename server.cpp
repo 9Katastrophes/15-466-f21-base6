@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 	srand(time(NULL));
 
 	//------------ main loop ------------
-	constexpr float ServerTick = 1.0f / 10.0f; //TODO: set a server tick that makes sense for your game
+	constexpr float ServerTick = 1.0f / 60.0f;
 
 	//server state:
 	//key regions
