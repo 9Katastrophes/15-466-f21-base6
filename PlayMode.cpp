@@ -11,8 +11,42 @@
 #include <random>
 #include <iostream>
 
+Load< Sound::Sample > pop_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("pop.wav"));
+});
+Load< Sound::Sample > chirp_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("chirp.wav"));
+});
+Load< Sound::Sample > boop_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("boop.wav"));
+});
+Load< Sound::Sample > quack_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("quack.wav"));
+});
+Load< Sound::Sample > drum_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("drum.wav"));
+});
+Load< Sound::Sample > squeak_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("squeak.wav"));
+});
+Load< Sound::Sample > bop_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("bop.wav"));
+});
+Load< Sound::Sample > bark_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("bark.wav"));
+});
+
 PlayMode::PlayMode(Client &client_) : client(client_) {
 	srand(time(NULL));
+
+	key_samples.emplace_back(*pop_sample);
+	key_samples.emplace_back(*chirp_sample);
+	key_samples.emplace_back(*boop_sample);
+	key_samples.emplace_back(*quack_sample);
+	key_samples.emplace_back(*drum_sample);
+	key_samples.emplace_back(*squeak_sample);
+	key_samples.emplace_back(*bop_sample);
+	key_samples.emplace_back(*bark_sample);
 
 	//----- allocate OpenGL resources -----
 	//taken from game0 code!
@@ -151,6 +185,9 @@ void PlayMode::update(float elapsed) {
 	client.connections.back().send(position.x);			//4 bytes
 	client.connections.back().send(position.y);			//4 bytes
 
+	//reset button press counters:
+	space.downs = 0;
+
 	//send/receive data:
 	client.poll([this](Connection *c, Connection::Event event){
 		if (event == Connection::OnOpen) {
@@ -218,13 +255,18 @@ void PlayMode::update(float elapsed) {
 						glm::vec2 player_position = glm::vec2(std::stof(pos_x), std::stof(pos_y));
 						glm::u8vec4 player_color = glm::u8vec4(stoi(r), stoi(g), stoi(b), stoi(a));
 
-						player_positions.push_back(player_position);
-						player_colors.push_back(player_color);
+						player_positions.emplace_back(player_position);
+						player_colors.emplace_back(player_color);
 
 					}
 					if (server_message_cpy[0] == 'k') { //we are processing the piano keys pressed
-						//TODO: process
+						//process which keys were played - they are indexed from 0 to 7
 						server_message_cpy = server_message_cpy.substr(1);
+						for (size_t i=0;i<server_message_cpy.size();i++) {
+							int key_id = server_message_cpy[i] - '0';
+							Sound::play(key_samples[key_id]);
+						}
+						server_message_cpy = "";
 					}
 				}
 

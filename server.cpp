@@ -23,6 +23,17 @@ glm::u8vec4 generate_random_color() {
 	return glm::u8vec4(r, g, b, a);
 }
 
+bool in_bounds(glm::vec2 pos, std::pair<glm::vec2, glm::vec2> bounds) {
+	float min_x = std::min(bounds.first.x, bounds.second.x);
+	float max_x = std::max(bounds.first.x, bounds.second.x);
+	float min_y = std::min(bounds.first.y, bounds.second.y);
+	float max_y = std::max(bounds.first.y, bounds.second.y);
+
+	if (min_x < pos.x && pos.x < max_x && min_y < pos.y && pos.y < max_y)
+		return true;
+	return false;
+}
+
 #ifdef _WIN32
 extern "C" { uint32_t GetACP(); }
 #endif
@@ -58,6 +69,17 @@ int main(int argc, char **argv) {
 	constexpr float ServerTick = 1.0f / 10.0f; //TODO: set a server tick that makes sense for your game
 
 	//server state:
+	//key regions
+	std::vector<std::pair<glm::vec2, glm::vec2>> key_bounds; //the area of each key is defined by the upper left corner and bottom right corner
+	glm::vec2 court_radius = glm::vec2(16.0f, 4.0f);
+	const float key_radius = 2.0f;
+
+	for (size_t i=0;i<8;i++) {
+		glm::vec2 center = glm::vec2(-court_radius.x + key_radius * (2.0f * i + 1.0f), 0.0f);
+		glm::vec2 radius = glm::vec2(key_radius, court_radius.y + 2.0f * key_radius);
+
+		key_bounds.emplace_back(std::pair(center - radius, center + radius));
+	}
 
 	//per-client state:
 	struct PlayerInfo {
@@ -127,9 +149,6 @@ int main(int argc, char **argv) {
 
 						std::memcpy(&player_pos_x, &c->recv_buffer[2], 4);
 						std::memcpy(&player_pos_y, &c->recv_buffer[6], 4);
-
-						//player_pos_x = player_pos_x;
-						//player_pos_y = player_pos_x;
 	
 						player.position.x = player_pos_x;
 						player.position.y = player_pos_y;						
@@ -145,9 +164,17 @@ int main(int argc, char **argv) {
 		std::string keys_pressed = "k";
 		for (auto &[c, player] : players) {
 			(void)c; //work around "unused variable" warning on whatever version of g++ github actions is running
-			for (; player.space_presses > 0; --player.space_presses) {
-				//TODO: check if the press was on a key
+			while(player.space_presses > 0) {
+				//check if the press was on a key
 				//if so, add the key id to keys_pressed
+				for (size_t i=0;i<key_bounds.size();i++) {
+					std::pair<glm::vec2, glm::vec2> bounds = key_bounds[i];
+					if (in_bounds(player.position, bounds)) {
+						keys_pressed += std::to_string(i);
+						std::cout << "Key was pressed!" << std::endl;
+						std::cout << "Keys Pressed: " << keys_pressed << std::endl;
+					}
+				}
 				player.space_presses -= 1;
 			}
 			status_message += "(" + std::to_string(player.position.x) + "," + std::to_string(player.position.y) + ")"; //player position

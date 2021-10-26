@@ -3,6 +3,7 @@
 #include "ColorTextureProgram.hpp"
 #include "Connection.hpp"
 #include "GL.hpp"
+#include "Sound.hpp"
 
 #include <glm/glm.hpp>
 
@@ -30,12 +31,17 @@ struct PlayMode : Mode {
 	} space;
 
 	glm::vec2 position = glm::vec2(0.0f);
+
+	//nice constants
 	glm::vec2 cursor_radius = glm::vec2(0.25f, 0.60f);
 	glm::vec2 court_radius = glm::vec2(16.0f, 4.0f);
 
 	//state information
 	std::vector<glm::vec2> player_positions;
 	std::vector<glm::u8vec4> player_colors;
+
+	//key sounds
+	std::vector<Sound::Sample> key_samples;
 
 	//last message from server:
 	std::string server_message;
