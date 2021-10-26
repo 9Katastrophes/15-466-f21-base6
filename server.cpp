@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 
 				} else { assert(evt == Connection::OnRecv);
 					//got data from client:
-					std::cout << "got bytes:\n" << hex_dump(c->recv_buffer); std::cout.flush();
+					//std::cout << "got bytes:\n" << hex_dump(c->recv_buffer); std::cout.flush();
 
 					//look up in players list:
 					auto f = players.find(c);
@@ -171,8 +171,6 @@ int main(int argc, char **argv) {
 					std::pair<glm::vec2, glm::vec2> bounds = key_bounds[i];
 					if (in_bounds(player.position, bounds)) {
 						keys_pressed += std::to_string(i);
-						std::cout << "Key was pressed!" << std::endl;
-						std::cout << "Keys Pressed: " << keys_pressed << std::endl;
 					}
 				}
 				player.space_presses -= 1;
@@ -181,7 +179,7 @@ int main(int argc, char **argv) {
 			status_message += "<" + std::to_string(player.color[0]) + "," + std::to_string(player.color[1]) + "," + std::to_string(player.color[2]) + "," + std::to_string(player.color[3]) + ">";
 		}
 		status_message += keys_pressed;
-		std::cout << status_message << std::endl; //DEBUG
+		//std::cout << status_message << std::endl; //DEBUG
 
 		//send updated game state to all clients
 		for (auto &[c, player] : players) {
@@ -193,7 +191,6 @@ int main(int argc, char **argv) {
 			c->send(uint8_t(status_message.size() % 256));
 			c->send_buffer.insert(c->send_buffer.end(), status_message.begin(), status_message.end());
 		}
-
 	}
 
 
